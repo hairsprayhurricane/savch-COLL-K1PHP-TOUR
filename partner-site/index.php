@@ -1,6 +1,7 @@
 <?php
 require_once 'api-client.php';
 
+
 $api = new ComfortTravelApiClient();
 $message = '';
 $error = '';
@@ -58,6 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Ошибка: ' . $e->getMessage();
     }
 }
+
 
 // Получение данных для отображения
 try {
@@ -320,28 +322,144 @@ try {
                 </form>
             </div>
             
+            <!-- Список туров -->
+            <div class="section">
+                <h3>Список туров</h3>
+                <?php if (isset($tours['data']) && count($tours['data']) > 0): ?>
+                    <table>
+                        <tr>
+                            <th>ID</th>
+                            <th>Название</th>
+                            <th>Страна</th>
+                            <th>Дата начала</th>
+                            <th>Дата окончания</th>
+                            <th>Цена</th>
+                            <th>Макс. людей</th>
+                        </tr>
+                        <?php foreach ($tours['data'] as $tour): ?>
+                            <tr>
+                                <td><?php echo $tour['id']; ?></td>
+                                <td><?php echo htmlspecialchars($tour['name']); ?></td>
+                                <td><?php echo htmlspecialchars($tour['country_id']); ?></td>
+                                <td><?php echo $tour['start_date']; ?></td>
+                                <td><?php echo $tour['end_date']; ?></td>
+                                <td><?php echo number_format($tour['price'], 2, ',', ' '); ?> ₽</td>
+                                <td><?php echo $tour['max_people']; ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </table>
+                <?php else: ?>
+                    <p>Туры не найдены</p>
+                <?php endif; ?>
+            </div>
+        </div>
+        
+        <!-- Бронирования -->
+        <div id="bookings" class="tab-content">
+            <h2>📅 Бронирования</h2>
             
-             <script>
+            <!-- Форма добавления бронирования -->
+            <div class="section">
+                <h3>Добавить новое бронирование</h3>
+                <form method="POST">
+                    <input type="hidden" name="action" value="create_booking">
+                    <div class="form-group">
+                        <label>Клиент:</label>
+                        <select name="client_id" required>
+                            <option value="">Выберите клиента</option>
+                            <?php if (isset($clients['data'])): ?>
+                                <?php foreach ($clients['data'] as $client): ?>
+                                    <option value="<?php echo $client['id']; ?>">
+                                        <?php echo htmlspecialchars($client['full_name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Тур:</label>
+                        <select name="tour_id" required>
+                            <option value="">Выберите тур</option>
+                            <?php if (isset($tours['data'])): ?>
+                                <?php foreach ($tours['data'] as $tour): ?>
+                                    <option value="<?php echo $tour['id']; ?>">
+                                        <?php echo htmlspecialchars($tour['name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Дата бронирования:</label>
+                        <input type="date" name="booking_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Общая стоимость (руб):</label>
+                        <input type="number" name="total_price" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Заметки:</label>
+                        <textarea name="notes" rows="3"></textarea>
+                    </div>
+                    <button type="submit">Добавить бронирование</button>
+                </form>
+            </div>
+            
+            <!-- Список бронирований -->
+            <div class="section">
+                <h3>Список бронирований</h3>
+                <?php if (isset($bookings['data']) && count($bookings['data']) > 0): ?>
+                    <table>
+                        <tr>
+                            <th>ID</th>
+                            <th>Клиент</th>
+                            <th>Тур</th>
+                            <th>Дата бронирования</th>
+                            <th>Сумма</th>
+                        </tr>
+                        <?php foreach ($bookings['data'] as $booking): ?>
+                            <tr>
+                                <td><?php echo $booking['id']; ?></td>
+                                <td><?php echo htmlspecialchars($booking['client_id']); ?></td>
+                                <td><?php echo htmlspecialchars($booking['tour_id']); ?></td>
+                                <td><?php echo $booking['booking_date']; ?></td>
+                                <td><?php echo number_format($booking['total_price'], 2, ',', ' '); ?> ₽</td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </table>
+                <?php else: ?>
+                    <p>Бронирования не найдены</p>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    
+    <script>
         // Функция для переключения вкладок
         function showTab(tabName) {
             // Скрыть все вкладки
             const tabContents = document.querySelectorAll('.tab-content');
-            tabContents.forEach(tab => {
-                tab.classList.remove('active');
-            });
+            if (tabContents) {
+                tabContents.forEach(tab => {
+                    if (tab) tab.classList.remove('active');
+                });
+            }
             
             // Убрать активный класс у всех табов
             const tabs = document.querySelectorAll('.tab');
-            tabs.forEach(tab => {
-                tab.classList.remove('active');
-            });
+            if (tabs) {
+                tabs.forEach(tab => {
+                    if (tab) tab.classList.remove('active');
+                });
+            }
             
             // Показать выбранную вкладку
-            document.getElementById(tabName).classList.add('active');
+            const activeTab = document.getElementById(tabName);
+            if (activeTab) activeTab.classList.add('active');
             
             // Активировать соответствующий таб
             document.querySelectorAll('.tab').forEach(tab => {
-                if (tab.textContent.includes(getTabLabel(tabName))) {
+                if (tab && tab.textContent && tab.textContent.includes(getTabLabel(tabName))) {
                     tab.classList.add('active');
                 }
             });
@@ -359,22 +477,37 @@ try {
             return labels[tabName] || tabName;
         }
         
-        // Автоматическое обновление данных каждые 30 секунд
-        setInterval(() => {
-            // Можно добавить автоматическое обновление данных
-            console.log('Автообновление данных...');
-        }, 30000);
-        
-        // Сохраняем выбранную вкладку в localStorage
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', function() {
-                const tabName = this.textContent.trim().toLowerCase();
-                localStorage.setItem('lastActiveTab', tabName);
+        // Initialize tabs
+        function initTabs() {
+            // Add click handlers to all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabText = this.textContent.trim().toLowerCase();
+                    const tabMap = {
+                        'дашборд': 'dashboard',
+                        'страны': 'countries',
+                        'клиенты': 'clients',
+                        'туры': 'tours',
+                        'бронирования': 'bookings'
+                    };
+                    
+                    if (tabMap[tabText]) {
+                        showTab(tabMap[tabText]);
+                        localStorage.setItem('lastActiveTab', tabText);
+                    }
+                });
             });
-        });
+            
+            // Show default tab
+            showTab('dashboard');
+        }
         
-        // Восстанавливаем последнюю активную вкладку при загрузке
+        // Initialize the application when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize tabs
+            initTabs();
+            
+            // Restore last active tab from localStorage
             const lastActiveTab = localStorage.getItem('lastActiveTab');
             if (lastActiveTab) {
                 const tabMap = {
@@ -390,4 +523,55 @@ try {
                 }
             }
         });
+        
+        // Автоматическое обновление данных каждые 30 секунд
+        setInterval(() => {
+            console.log('Автообновление данных...');
+        }, 30000);
+        
+        // Функция для поиска бронирований
+        function searchBookings(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const params = new URLSearchParams();
+            
+            if (formData.get('client_id')) params.append('client_id', formData.get('client_id'));
+            if (formData.get('tour_id')) params.append('tour_id', formData.get('tour_id'));
+
+            fetch(`api-client.php?action=getBookings&${params.toString()}`)
+                .then(response => response.json())
+                .then(data => {
+                    const bookingsList = document.getElementById('bookingsList');
+                    if (data.error) {
+                        bookingsList.innerHTML = `<div class="error">${data.error}</div>`;
+                        return;
+                    }
+                    
+                    if (data.length === 0) {
+                        bookingsList.innerHTML = '<p>Бронирований не найдено</p>';
+                        return;
+                    }
+
+                    let html = '<table><tr><th>ID</th><th>Клиент</th><th>Тур</th><th>Дата бронирования</th><th>Статус</th></tr>';
+                    data.forEach(booking => {
+                        html += `
+                            <tr>
+                                <td>${booking.id}</td>
+                                <td>${booking.client_name || 'Неизвестно'}</td>
+                                <td>${booking.tour_name || 'Неизвестно'}</td>
+                                <td>${new Date(booking.booking_date).toLocaleDateString()}</td>
+                                <td>${booking.status || 'Ожидает подтверждения'}</td>
+                            </tr>
+                        `;
+                    });
+                    html += '</table>';
+                    bookingsList.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('bookingsList').innerHTML = '<div class="error">Ошибка при загрузке бронирований</div>';
+                });
+        }
     </script>
+</body>
+</html>
